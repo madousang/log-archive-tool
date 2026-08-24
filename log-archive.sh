@@ -6,8 +6,8 @@ set -euo pipefail
 
 # --- Config ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ARCHIVE_DIR="/var/backups/log-archive/archives"
-LOG_FILE="/var/backups/log-archive/archive.log"
+ARCHIVE_DIR="${ARCHIVE_DIR:-$SCRIPT_DIR/archive-output}"
+LOG_FILE="${LOG_FILE:-$SCRIPT_DIR/archive.log}"
 
 # --- Argument check ---
 if [ "$#" -ne 1 ]; then
@@ -19,6 +19,14 @@ LOG_DIR="$1"
 
 if [ ! -d "$LOG_DIR" ]; then
     echo "Error: '$LOG_DIR' is not a valid directory."
+    exit 1
+fi
+
+mkdir -p "$(dirname "$LOG_FILE")" "$ARCHIVE_DIR"
+
+# Prevent archiving a directory into itself or a child of itself.
+if [ "$LOG_DIR" = "$ARCHIVE_DIR" ] || [[ "$LOG_DIR" == "$ARCHIVE_DIR"/* ]] || [[ "$ARCHIVE_DIR" == "$LOG_DIR"/* ]]; then
+    echo "Error: archive directory '$ARCHIVE_DIR' must not be inside or equal to '$LOG_DIR'."
     exit 1
 fi
 
